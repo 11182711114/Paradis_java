@@ -16,6 +16,8 @@ public class Factorizer {
 	public Factorizer(long product, int threads) {
 		this.product = product;
 		this.maxThreads = threads;
+		if (threads > product)
+			this.maxThreads = (int) product;
 		workPool = new Work[maxThreads];
 		// threadPool = new Thread[maxThreads];
 	}
