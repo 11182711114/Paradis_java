@@ -1,16 +1,16 @@
 // Peter Idestam-Almquist, 2018-02-21.
 
-package w02;
+package w02.sync;
 
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 // TODO: Make this class thread-safe and as performant as possible.
 class Bank {
 	// Instance variables.
 	private int accountCounter = 0;
-	private Map<Integer, Account> accounts = new HashMap<Integer, Account>();
+	private Map<Integer, Account> accounts = new ConcurrentHashMap<Integer, Account>();
 	
 	// Instance methods.
 	
@@ -40,29 +40,6 @@ class Bank {
 				acc.setBalance(acc.getBalance() + operation.getAmount());
 			}
 		}
-		
-//		for (int i = 0; i < operations.size(); i++) { // Slower? At least uglier
-//		Operation operation = operations.get(i);
-//		Account acc = accounts.get(operation.getAccountId());
-//		synchronized(acc) {
-//			acc.setBalance(acc.getBalance() + operation.getAmount());
-//		}
-//	}
-		
-//		operations.forEach(opereration -> { // Even slower
-//			Account acc = accounts.get(opereration.getAccountId());
-//			synchronized(acc) {
-//				acc.setBalance(acc.getBalance() + opereration.getAmount());
-//			}
-//		});
-		
-
-//		operations.parallelStream().forEach(operation -> { // Slowest
-//			Account acc = accounts.get(operation.getAccountId());
-//			synchronized(acc) {
-//				acc.setBalance(acc.getBalance() + operation.getAmount());
-//			}
-//		});
 	}
 	
 	// Not used for anything except printing

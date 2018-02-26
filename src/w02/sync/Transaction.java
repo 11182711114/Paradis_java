@@ -1,6 +1,6 @@
 // Peter Idestam-Almquist, 2018-02-21.
 
-package w02;
+package w02.sync;
 
 import java.util.ArrayList;
 import java.util.List;

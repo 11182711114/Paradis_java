@@ -1,6 +1,6 @@
 // Peter Idestam-Almquist, 2018-02-21.
 
-package w02;
+package w02.sync;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -8,11 +8,11 @@ import java.util.concurrent.TimeUnit;
 
 public class Program {
 	// Static variables.
-	private static final int NUM_THREADS = 4;
-	private static final int NUM_ACCOUNTS = 6;
-	private static final int FACTOR = 100000;
-	private static final int TIMEOUT = 60; // Seconds;
-	private static final int NUM_TRANSACTIONS = NUM_ACCOUNTS * FACTOR;
+	private static int NUM_THREADS = 12;
+	private static int NUM_ACCOUNTS = 1000;
+	private static int FACTOR = 10000;
+	private static int TIMEOUT = 60; // Seconds;
+	private static int NUM_TRANSACTIONS = NUM_ACCOUNTS * FACTOR;
 	private static Integer[] accountIds = new Integer[NUM_ACCOUNTS];
 	private static Operation[] withdrawals = new Operation[NUM_ACCOUNTS];
 	private static Operation[] deposits = new Operation[NUM_ACCOUNTS];
@@ -59,7 +59,8 @@ public class Program {
 			
 			for (int i = 0; i < NUM_ACCOUNTS; i++) {
 				int balance = bank.getAccountBalance(accountIds[i]);
-				System.out.println("Account: " + accountIds[i] + "; Balance: " + balance);
+				if (balance != 1000)
+					System.out.println("Mismatch:: Account: " + accountIds[i] + ";\tBalance: " + balance);
 			}
 		}
 		catch (Exception exception) {
@@ -93,7 +94,8 @@ public class Program {
 			
 			for (int i = 0; i < NUM_ACCOUNTS; i++) {
 				int balance = bank.getAccountBalance(accountIds[i]);
-				System.out.println("Account: " + accountIds[i] + "; Balance: " + balance);
+				if (balance != 1000)
+					System.out.println("Mismatch:: Account: " + accountIds[i] + ";\tBalance: " + balance);
 			}
 		}
 		catch (Exception exception) {
@@ -103,6 +105,12 @@ public class Program {
 	
 	// Entry point.
 	public static void main(String[] args) {
+		NUM_THREADS = Integer.parseInt(args[0]);
+		NUM_ACCOUNTS = Integer.parseInt(args[1]);
+		FACTOR = Integer.parseInt(args[2]);
+		TIMEOUT = Integer.parseInt(args[3]);
+		NUM_TRANSACTIONS = NUM_ACCOUNTS * FACTOR;
+		System.out.println("Synchronized");
 		initiate();
 		runTestOperations();
 		runTestTransactions();

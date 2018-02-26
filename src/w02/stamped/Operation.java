@@ -1,6 +1,6 @@
 // Peter Idestam-Almquist, 2018-02-21.
 
-package w02;
+package w02.stamped;
 
 class Operation implements Runnable {
 	final int ACCOUNT_ID;
