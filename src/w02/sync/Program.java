@@ -105,11 +105,16 @@ public class Program {
 	
 	// Entry point.
 	public static void main(String[] args) {
-		NUM_THREADS = Integer.parseInt(args[0]);
-		NUM_ACCOUNTS = Integer.parseInt(args[1]);
-		FACTOR = Integer.parseInt(args[2]);
-		TIMEOUT = Integer.parseInt(args[3]);
-		NUM_TRANSACTIONS = NUM_ACCOUNTS * FACTOR;
+		if (args.length > 0) {
+			NUM_THREADS = Integer.parseInt(args[0]);
+			NUM_ACCOUNTS = Integer.parseInt(args[1]);
+			FACTOR = Integer.parseInt(args[2]);
+			TIMEOUT = Integer.parseInt(args[3]);
+			NUM_TRANSACTIONS = NUM_ACCOUNTS * FACTOR;
+			accountIds = new Integer[NUM_ACCOUNTS];
+			withdrawals = new Operation[NUM_ACCOUNTS];
+			deposits = new Operation[NUM_ACCOUNTS];
+		}
 		System.out.println("Synchronized");
 		initiate();
 		runTestOperations();

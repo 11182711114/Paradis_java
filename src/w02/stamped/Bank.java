@@ -2,10 +2,14 @@
 
 package w02.stamped;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.StampedLock;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // TODO: Make this class thread-safe and as performant as possible.
 class Bank {
@@ -52,22 +56,25 @@ class Bank {
 		
 	// TODO: If you are not aiming for grade VG you should remove this method.
 	void runTransaction(Transaction transaction) {
-		@SuppressWarnings("unused")
 		List<Integer> accountIds = transaction.getAccountIds();
 		List<Operation> operations = transaction.getOperations();
 		
-		for (Operation operation : operations) {
+//		long start = System.nanoTime();
+		Map<Integer, Long> stamps = accountIds.stream().collect(Collectors.toMap(id -> id, id -> { return accounts.get(id).getLock().writeLock(); }));
+//		long done = System.nanoTime();
+//		System.out.println("\t" + (done-start) / 1E6);
+//		if ((done-start) / 1E6 > 50)
+//			stamps.forEach((id, stamp) -> { System.out.println(id + " -> " + stamp);});
 			
-			AccountAndLockWrapper alw = accounts.get(operation.getAccountId());
-			StampedLock lock = alw.getLock();
-			
-			long stamp = lock.writeLock();
-			try {
+		
+		try {
+			for (Operation operation : operations) {
+				AccountAndLockWrapper alw = accounts.get(operation.getAccountId());				
 				Account acc = alw.getAccount();
 				acc.setBalance(acc.getBalance() + operation.getAmount());
-			} finally {
-				lock.unlock(stamp);
 			}
+		} finally {
+			stamps.forEach((id, stamp) -> { accounts.get(id).getLock().unlock(stamp); });
 		}
 	}
 	

@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 public class Program {
 	// Static variables.
 	private static int NUM_THREADS = 12;
-	private static int NUM_ACCOUNTS = 1000;
+	private static int NUM_ACCOUNTS = 20;
 	private static int FACTOR = 10000;
 	private static int TIMEOUT = 60; // Seconds;
 	private static int NUM_TRANSACTIONS = NUM_ACCOUNTS * FACTOR;
@@ -106,11 +106,16 @@ public class Program {
 	
 	// Entry point.
 	public static void main(String[] args) {
-		NUM_THREADS = Integer.parseInt(args[0]);
-		NUM_ACCOUNTS = Integer.parseInt(args[1]);
-		FACTOR = Integer.parseInt(args[2]);
-		TIMEOUT = Integer.parseInt(args[3]);
-		NUM_TRANSACTIONS = NUM_ACCOUNTS * FACTOR;
+		if (args.length > 0) {
+			NUM_THREADS = Integer.parseInt(args[0]);
+			NUM_ACCOUNTS = Integer.parseInt(args[1]);
+			FACTOR = Integer.parseInt(args[2]);
+			TIMEOUT = Integer.parseInt(args[3]);
+			NUM_TRANSACTIONS = NUM_ACCOUNTS * FACTOR;
+			accountIds = new Integer[NUM_ACCOUNTS];
+			withdrawals = new Operation[NUM_ACCOUNTS];
+			deposits = new Operation[NUM_ACCOUNTS];
+		}
 		System.out.println("StampedLock");
 		initiate();
 		runTestOperations();
