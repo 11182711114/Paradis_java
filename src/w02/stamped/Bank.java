@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.StampedLock;
 
 /**
@@ -60,6 +62,7 @@ class Bank {
 	/** Runs all the operations in a transaction, if one fails all are rolled back to the original state.
 	 * @param transaction - The transaction to run
 	 */
+	// Should throw TimeoutException if we cannot lock the account in time to avoid deadlocks but that requires changes to the other files which are not handed in.
 	void runTransaction(Transaction transaction) {
 		List<Integer> accountIds = transaction.getAccountIds();
 		List<Operation> operations = transaction.getOperations();
@@ -68,11 +71,23 @@ class Bank {
 //		Not eq anymore, doesnt handle rollbacks
 //		Map<Integer, Long> stamps = accountIds.stream().collect(Collectors.toMap(id -> id, id -> { return accounts.get(id).getLock().writeLock(); }));
 //		Roughly 10% faster 
-		Map<Integer, Long> stamps = new HashMap<Integer, Long>( (int) (accountIds.size() * 1.25), 0.75f ); 
+		Map<Integer, Long> stamps = new HashMap<Integer, Long>( (int) (accountIds.size() * 1.25), 0.75f );
 		for (Integer integer : accountIds) {
 			AccountAndLockWrapper alw = accounts.get(integer);
-			long stamp = alw.getLock().writeLock();
-			stamps.put(integer, stamp);
+			long stamp = 0L;
+			try {
+				stamp = alw.getLock().tryWriteLock(500, TimeUnit.MILLISECONDS);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			
+			if (alw.getLock().validate(stamp))
+				stamps.put(integer, stamp);
+			else {
+				stamps.forEach((id, unlockStamp) -> { accounts.get(id).getLock().unlock(unlockStamp); });
+				return;
+//				throw new TimeoutException("Unable to get lock for " + alw.getAccount().getId() + " in time"); // Note that this should be thrown here but since this is the only class that is turned in and transaction needs to be altered to handle this.
+			}
 			
 			// Remember before balance for rollback
 			Account acc = alw.getAccount();
