@@ -53,9 +53,9 @@ public class Program {
 			boolean completed = executor.awaitTermination(TIMEOUT, TimeUnit.SECONDS);
 			time = System.nanoTime() - time;
 			
-			System.out.println("Test operations finished.");
-			System.out.println("Completed: " + completed);
-			System.out.println("Time [ms]: " + time / 1000000);
+//			System.out.println("Test operations finished.");
+//			System.out.println("Completed: " + completed);
+//			System.out.println("Time [ms]: " + time / 1000000);
 			
 			for (int i = 0; i < NUM_ACCOUNTS; i++) {
 				int balance = bank.getAccountBalance(accountIds[i]);
@@ -89,9 +89,9 @@ public class Program {
 			boolean completed = executor.awaitTermination(TIMEOUT, TimeUnit.SECONDS);
 			time = System.nanoTime() - time;
 			
-			System.out.println("Test transactions finished.");
-			System.out.println("Completed: " + completed);
-			System.out.println("Time [ms]: " + time / 1000000);
+//			System.out.println("Test transactions finished.");
+//			System.out.println("Completed: " + completed);
+//			System.out.println("Time [ms]: " + time / 1000000);
 			
 			for (int i = 0; i < NUM_ACCOUNTS; i++) {
 				int balance = bank.getAccountBalance(accountIds[i]);
@@ -116,7 +116,7 @@ public class Program {
 			withdrawals = new Operation[NUM_ACCOUNTS];
 			deposits = new Operation[NUM_ACCOUNTS];
 		}
-		System.out.println("StampedLock");
+//		System.out.println("StampedLock");
 		initiate();
 		runTestOperations();
 		runTestTransactions();
