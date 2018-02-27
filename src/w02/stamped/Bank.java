@@ -1,5 +1,3 @@
-// Peter Idestam-Almquist, 2018-02-21.
-
 package w02.stamped;
 
 import java.util.HashMap;
@@ -8,9 +6,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.StampedLock;
 
-// TODO: Make this class thread-safe and as performant as possible.
+/**
+ * @author Peter Idestam-Almquist
+ * @author Heavily modified by Fredrik Larsson frla9839
+ *
+ */
 class Bank {
 	
+	/** Simple wrapper bundling an {@link Account} with a {@link StampedLock}
+	 * @author Fredrik
+	 */
 	class AccountAndLockWrapper {
 		Account acc;
 		StampedLock accLock;
@@ -22,6 +27,7 @@ class Bank {
 		public Account getAccount() { return acc; }
 		public StampedLock getLock() { return accLock; }
 	}
+	
 	// Instance variables.
 	private int accountCounter = 0;
 	
@@ -51,7 +57,9 @@ class Bank {
 		}
 	}
 		
-	// TODO: If you are not aiming for grade VG you should remove this method.
+	/** Runs all the operations in a transaction, if one fails all are rolled back to the original state.
+	 * @param transaction - The transaction to run
+	 */
 	void runTransaction(Transaction transaction) {
 		List<Integer> accountIds = transaction.getAccountIds();
 		List<Operation> operations = transaction.getOperations();
@@ -77,7 +85,7 @@ class Bank {
 				Account acc = alw.getAccount();
 				acc.setBalance(acc.getBalance() + operation.getAmount());
 			}
-		} catch (Exception e) {
+		} catch (Exception e) { // Since this example is a bit simple, there are no apperant exceptions that are ever raised.
 			// Rollback all if anything goes wrong
 			for (Map.Entry<Integer, Integer> entry : rollbacks.entrySet()) {
 				accounts.get(entry.getKey())
@@ -89,7 +97,10 @@ class Bank {
 		}
 	}
 	
-	// Not used for anything except printing
+	/** Returns the balance of the account with the {@code accoundId}
+	 * @param accountId - The account to get the balance of
+	 * @return {@code int} - the balance of the account
+	 */
 	int getAccountBalance(int accountId) {
 		AccountAndLockWrapper alw = accounts.get(accountId);
 		StampedLock lock = alw.getLock();
@@ -98,6 +109,7 @@ class Bank {
 		Account account = alw.getAccount();
 		int toReturn = account.getBalance();
 		
+		// fail optimistic read
 		if (!lock.validate(stamp)) {
 			stamp = lock.readLock();
 			try {
@@ -106,6 +118,7 @@ class Bank {
 				lock.unlock(stamp);
 			}
 		}
+		
 		return toReturn;
 	}
 }
