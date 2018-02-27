@@ -2,14 +2,11 @@
 
 package w02.stamped;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.StampedLock;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 // TODO: Make this class thread-safe and as performant as possible.
 class Bank {
@@ -58,14 +55,21 @@ class Bank {
 	void runTransaction(Transaction transaction) {
 		List<Integer> accountIds = transaction.getAccountIds();
 		List<Operation> operations = transaction.getOperations();
+		Map<Integer, Integer> rollbacks = new HashMap<>();		
 		
-//		long start = System.nanoTime();
-		Map<Integer, Long> stamps = accountIds.stream().collect(Collectors.toMap(id -> id, id -> { return accounts.get(id).getLock().writeLock(); }));
-//		long done = System.nanoTime();
-//		System.out.println("\t" + (done-start) / 1E6);
-//		if ((done-start) / 1E6 > 50)
-//			stamps.forEach((id, stamp) -> { System.out.println(id + " -> " + stamp);});
+//		Not eq anymore, doesnt handle rollbacks
+//		Map<Integer, Long> stamps = accountIds.stream().collect(Collectors.toMap(id -> id, id -> { return accounts.get(id).getLock().writeLock(); }));
+//		Roughly 10% faster 
+		Map<Integer, Long> stamps = new HashMap<Integer, Long>( (int) (accountIds.size() * 1.25), 0.75f ); 
+		for (Integer integer : accountIds) {
+			AccountAndLockWrapper alw = accounts.get(integer);
+			long stamp = alw.getLock().writeLock();
+			stamps.put(integer, stamp);
 			
+			// Remember before balance for rollback
+			Account acc = alw.getAccount();
+			rollbacks.put(acc.getId(), acc.getBalance());
+		}
 		
 		try {
 			for (Operation operation : operations) {
@@ -73,7 +77,14 @@ class Bank {
 				Account acc = alw.getAccount();
 				acc.setBalance(acc.getBalance() + operation.getAmount());
 			}
+		} catch (Exception e) {
+			// Rollback all if anything goes wrong
+			for (Map.Entry<Integer, Integer> entry : rollbacks.entrySet()) {
+				accounts.get(entry.getKey())
+					.getAccount().setBalance(entry.getValue());
+			}			
 		} finally {
+			// Unlock all
 			stamps.forEach((id, stamp) -> { accounts.get(id).getLock().unlock(stamp); });
 		}
 	}
