@@ -62,7 +62,6 @@ public class Program {
 				if (balance != 1000)
 					System.out.println("Mismatch:: Account: " + accountIds[i] + ";\tBalance: " + balance);
 			}
-			System.out.println("");
 		}
 		catch (Exception exception) {
 			exception.printStackTrace();

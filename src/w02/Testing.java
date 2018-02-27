@@ -7,8 +7,8 @@ import java.util.TreeMap;
 public class Testing {
 	public static void main(String[] args) {
 		String NUM_THREADS = "" + 	12;
-		String NUM_ACCOUNTS = "" + 	1_000;
-		String FACTOR = "" + 		1_000;
+		String NUM_ACCOUNTS = "" + 	1_00;
+		String FACTOR = "" + 		10_000;
 		String TIMEOUT = "" + 		60;
 		String Ops = format((long) (Integer.parseInt(FACTOR) * Integer.parseInt(NUM_ACCOUNTS)*3));
 		int iterations = 25;
@@ -16,6 +16,7 @@ public class Testing {
 
 		String[] testArgs = {NUM_THREADS, NUM_ACCOUNTS, FACTOR, TIMEOUT};	
 
+		System.out.println("Stamped");
 		long start = System.nanoTime();
 		for (int i = 0; i < iterations; i++) {	
 			w02.stamped.Program.main(testArgs);	
@@ -24,7 +25,8 @@ public class Testing {
 		System.out.println("Batch of " + iterations + " iterations done in: " + (done-start) / 1E6 + "ms");
 		
 		System.out.println("\n");
-		
+
+		System.out.println("Intrinsic locks");
 		long startSync = System.nanoTime();
 		for (int i = 0; i < iterations; i++) {	
 			w02.sync.Program.main(testArgs);
