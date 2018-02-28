@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 // TODO: Make this class thread-safe and as performant as possible.
-class Bank {
+public class Bank {
 	// Instance variables.
 	private int accountCounter = 0;
 	private Map<Integer, Account> accounts = new ConcurrentHashMap<Integer, Account>();
@@ -45,6 +45,10 @@ class Bank {
 	// Not used for anything except printing
 	int getAccountBalance(int accountId) {
 		Account account = accounts.get(accountId);
-		return account.getBalance();
+		int toReturn = 0;
+		synchronized(account) {
+			toReturn = account.getBalance();
+		}
+		return toReturn;
 	}
 }

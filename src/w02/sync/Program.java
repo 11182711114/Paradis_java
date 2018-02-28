@@ -6,6 +6,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import w02.sync.ReadBalance;
+
 public class Program {
 	// Static variables.
 	private static int NUM_THREADS = 12;
@@ -37,17 +39,22 @@ public class Program {
 	// You may use this test to test thread-safety for operations.
 	private static void runTestOperations() {
 		ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
-		
+
+		ReadBalance[] readers = new ReadBalance[NUM_TRANSACTIONS * 2];
 		Operation[] operations = new Operation[NUM_TRANSACTIONS * 2];
 		for (int i = 0; i < NUM_TRANSACTIONS; i++) {
 			operations[i * 2] = withdrawals[i % NUM_ACCOUNTS];
 			operations[(i * 2) + 1] = deposits[(i + 1) % NUM_ACCOUNTS];
+			
+			readers[i * 2] = new ReadBalance(i % NUM_ACCOUNTS, bank);
+			readers[(i * 2) + 1] = new ReadBalance(i % NUM_ACCOUNTS, bank);
 		}
 
 		try {
 			long time = System.nanoTime();
 			for (int i = 0; i < NUM_TRANSACTIONS * 2; i++) {
 				executor.execute(operations[i]);
+				executor.execute(readers[i]);
 			}
 			executor.shutdown();
 			boolean completed = executor.awaitTermination(TIMEOUT, TimeUnit.SECONDS);
@@ -71,18 +78,22 @@ public class Program {
 	// You may use this test to test thread-safety for transactions.
 	private static void runTestTransactions() {
 		ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
-		
+
+		ReadBalance[] readers = new ReadBalance[NUM_TRANSACTIONS];
 		Transaction[] transactions = new Transaction[NUM_TRANSACTIONS];
 		for (int i = 0; i < NUM_TRANSACTIONS; i++) {
 			transactions[i] = new Transaction(bank);
 			transactions[i].add(withdrawals[i % NUM_ACCOUNTS]);
 			transactions[i].add(deposits[(i + 1) % NUM_ACCOUNTS]);
+			
+			readers[i] = new ReadBalance(i % NUM_ACCOUNTS, bank);
 		}
 
 		try {
 			long time = System.nanoTime();
 			for (int i = 0; i < NUM_TRANSACTIONS; i++) {
 				executor.execute(transactions[i]);
+				executor.execute(readers[i]);
 			}
 			executor.shutdown();
 			boolean completed = executor.awaitTermination(TIMEOUT, TimeUnit.SECONDS);

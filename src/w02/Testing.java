@@ -7,12 +7,12 @@ import java.util.TreeMap;
 public class Testing {
 	public static void main(String[] args) {
 		String NUM_THREADS = "" + 	12;
-		String NUM_ACCOUNTS = "" + 	1_00;
+		String NUM_ACCOUNTS = "" + 	10_00;
 		String FACTOR = "" + 		10_000;
 		String TIMEOUT = "" + 		60;
-		String Ops = format((long) (Integer.parseInt(FACTOR) * Integer.parseInt(NUM_ACCOUNTS)*3));
-		int iterations = 25;
-		System.out.format("Testing:%nThreads: %s%nAccounts: %s%nFactor: %s%nTotal Operations: %s%nTimeout: %s%n%n", NUM_THREADS, NUM_ACCOUNTS, FACTOR, Ops, TIMEOUT);
+		int iterations = 1;
+		String Ops = format((long) ((Integer.parseInt(FACTOR) * Integer.parseInt(NUM_ACCOUNTS)*5)*iterations));
+		System.out.format("Threads: %s%nAccounts: %s%nFactor: %s%nTotal Operations: %s%nTimeout: %s%n%n", NUM_THREADS, NUM_ACCOUNTS, FACTOR, Ops, TIMEOUT);
 
 		String[] testArgs = {NUM_THREADS, NUM_ACCOUNTS, FACTOR, TIMEOUT};	
 
@@ -23,16 +23,14 @@ public class Testing {
 		} 
 		long done = System.nanoTime();
 		System.out.println("Batch of " + iterations + " iterations done in: " + (done-start) / 1E6 + "ms");
-		
-		System.out.println("\n");
 
-		System.out.println("Intrinsic locks");
-		long startSync = System.nanoTime();
-		for (int i = 0; i < iterations; i++) {	
-			w02.sync.Program.main(testArgs);
-		} 
-		long doneSync = System.nanoTime();
-		System.out.println("Batch of " + iterations + " iterations done in:" + (doneSync-startSync) / 1E6 + "ms");
+//		System.out.println("Intrinsic locks");
+//		long startSync = System.nanoTime();
+//		for (int i = 0; i < iterations; i++) {	
+//			w02.sync.Program.main(testArgs);
+//		} 
+//		long doneSync = System.nanoTime();
+//		System.out.println("Batch of " + iterations + " iterations done in: " + (doneSync-startSync) / 1E6 + "ms");
 		
 	}
 	
