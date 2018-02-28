@@ -73,24 +73,22 @@ public class Bank {
 		account.setBalance(account.getBalance() + operation.getAmount());		
 	}
 		
-	/** Runs all the operations in a transaction, if one fails all are rolled back to the original state.
-	 * @param transaction - The transaction to run
+	/** Tries to lock all of the accounts in accountIds storing the stamps in stamps, records the balance in the accounts.
+	 * @param accountIds - The accounts to lock
+	 * @param rollbacks - The {@link Map} to store the balance in
+	 * @param stamps - The {@link Map} to store the lock stamps in
+	 * @param timeoutms - Time out period of trying to lock the accounts(individual)
+	 * @param sleepFloor - Minimum amount of time to sleep if timed out waiting for a lock
+	 * @param sleepCeil - Max amount of time to sleep if timed out waiting for a lock
 	 */
-	// Should throw TimeoutException if we cannot lock the account in time to avoid deadlocks but that requires changes to the other files which are not handed in.
-	void runTransaction(Transaction transaction) {
-		List<Integer> accountIds = transaction.getAccountIds();
-		List<Operation> operations = transaction.getOperations();
-		
-		Map<Integer, Integer> rollbacks = new HashMap<>();	
-		Map<Integer, Long> stamps = new HashMap<Integer, Long>();
-		
+	private void lockAll(List<Integer> accountIds, Map<Integer, Integer> rollbacks, Map<Integer, Long> stamps, int timeoutms, int sleepFloor, int sleepCeil) {
 		boolean failedLock = false;
 		do {
 			// If we failed last run
 			if (failedLock) {
 				try {
-					int sleepTime = ThreadLocalRandom.current().nextInt(50, 101);
-					System.out.println(Thread.currentThread().getName() + "::" + Thread.currentThread().getId()+" Failed aquiring atleast one lock, sleeping for "+ sleepTime +" before trying again");
+					int sleepTime = ThreadLocalRandom.current().nextInt(sleepFloor, sleepCeil);
+					System.out.println(Thread.currentThread().getName() + "::" + Thread.currentThread().getId()+" Failed aquiring atleast one lock, sleeping for "+ sleepTime +"ms before trying again");
 					Thread.sleep(sleepTime); // Sleep for 100-500ms
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
@@ -106,7 +104,7 @@ public class Bank {
 				AccountAndLockWrapper alw = accounts.get(integer);
 				long stamp = 0L;
 				try { 
-					stamp = alw.getLock().tryWriteLock(50, TimeUnit.MILLISECONDS);
+					stamp = alw.getLock().tryWriteLock(timeoutms, TimeUnit.MILLISECONDS);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
@@ -125,14 +123,22 @@ public class Bank {
 				}
 			}
 		} while(failedLock);
-		
+	}
+	
+	/** Performs the given operations, if exception is raised from the operations the accounts are rolled back to previous state according to rollbacks.
+	 * 	Finally, unlocks all the accounts in stamps
+	 * @param operations - The operations to execute
+	 * @param rollbacks - Account.id => Before balance
+	 * @param stamps - Account.id => Lock stamp
+	 */
+	private void doTransactionOperation(List<Operation> operations, Map<Integer, Integer> rollbacks, Map<Integer, Long> stamps) {
 		// Operation stuff
 		try {
 			for (Operation operation : operations) {
 				AccountAndLockWrapper alw = accounts.get(operation.getAccountId());
 				doActualOperation(operation, alw.getAccount());
 			}
-		} catch (Exception e) { // Since this example is a bit simple, there are no apperant exceptions that are ever raised.
+		} catch (IllegalArgumentException e) { // Since this example is a bit simple, there are no apperant exceptions that are ever raised.
 			// Rollback all if anything goes wrong, the account are already locked
 			System.out.println("Something went wrong, rolling back");
 			rollbacks.forEach((id, value) -> { accounts.get(id).getAccount().setBalance(value); });
@@ -140,6 +146,22 @@ public class Bank {
 			// Unlock all
 			stamps.forEach((id, stamp) -> { accounts.get(id).getLock().unlock(stamp); });
 		}
+		
+	}
+	
+	/** Runs all the operations in a transaction, if one fails all are rolled back to the original state.
+	 * @param transaction - The transaction to run
+	 */
+	// Should throw TimeoutException if we cannot lock the account in time to avoid deadlocks but that requires changes to the other files which are not handed in.
+	void runTransaction(Transaction transaction) {
+		List<Integer> accountIds = transaction.getAccountIds();
+		List<Operation> operations = transaction.getOperations();
+		
+		Map<Integer, Integer> rollbacks = new HashMap<>();	
+		Map<Integer, Long> stamps = new HashMap<Integer, Long>();
+		
+		lockAll(accountIds, rollbacks, stamps, 50, 50, 101);
+		doTransactionOperation(operations, rollbacks, stamps);
 	}
 	
 	/** Returns the balance of the account with the {@code accoundId}
