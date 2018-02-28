@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.StampedLock;
 
 /**
@@ -13,7 +13,14 @@ import java.util.concurrent.locks.StampedLock;
  * @author Heavily modified by Fredrik Larsson frla9839
  *
  */
-class Bank {
+
+/* 
+ * I belive that this entire problem is a bit bad for testing performance, 
+ * the NQ(N = Accounts, Q = transaction/operation) value of the program does not justify it being multithreaded, 
+ * as shown by running the original not threadsafe program sequencially is faster than doing it multithreaded (With errors)
+ * and the overhead cost of multithreading will always outweight the benefits as the transactions/operations are very light-weight.
+ */
+public class Bank {
 	
 	/** Simple wrapper bundling an {@link Account} with a {@link StampedLock}
 	 * @author Fredrik
@@ -52,11 +59,18 @@ class Bank {
 		StampedLock lock = awl.getLock();
 		long stamp = lock.writeLock();
 		try {
-			Account account = awl.getAccount();
-			account.setBalance(account.getBalance() + operation.getAmount());
+			doActualOperation(operation, awl.getAccount());
 		} finally {
 			lock.unlock(stamp);
 		}
+	}
+	 
+	/** Actual operation, the input account should be locked from the caller
+	 * @param operation the operation
+	 * @param account the account
+	 */
+	private void doActualOperation(Operation operation, Account account) {
+		account.setBalance(account.getBalance() + operation.getAmount());		
 	}
 		
 	/** Runs all the operations in a transaction, if one fails all are rolled back to the original state.
@@ -66,46 +80,62 @@ class Bank {
 	void runTransaction(Transaction transaction) {
 		List<Integer> accountIds = transaction.getAccountIds();
 		List<Operation> operations = transaction.getOperations();
-		Map<Integer, Integer> rollbacks = new HashMap<>();		
 		
-//		Not eq anymore, doesnt handle rollbacks
-//		Map<Integer, Long> stamps = accountIds.stream().collect(Collectors.toMap(id -> id, id -> { return accounts.get(id).getLock().writeLock(); }));
-//		Roughly 10% faster 
-		Map<Integer, Long> stamps = new HashMap<Integer, Long>( (int) (accountIds.size() * 1.25), 0.75f );
-		for (Integer integer : accountIds) {
-			AccountAndLockWrapper alw = accounts.get(integer);
-			long stamp = 0L;
-			try {
-				stamp = alw.getLock().tryWriteLock(500, TimeUnit.MILLISECONDS);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			
-			if (alw.getLock().validate(stamp))
-				stamps.put(integer, stamp);
-			else {
-				stamps.forEach((id, unlockStamp) -> { accounts.get(id).getLock().unlock(unlockStamp); });
-				return;
-//				throw new TimeoutException("Unable to get lock for " + alw.getAccount().getId() + " in time"); // Note that this should be thrown here but since this is the only class that is turned in and transaction needs to be altered to handle this.
-			}
-			
-			// Remember before balance for rollback
-			Account acc = alw.getAccount();
-			rollbacks.put(acc.getId(), acc.getBalance());
-		}
+		Map<Integer, Integer> rollbacks = new HashMap<>();	
+		Map<Integer, Long> stamps = new HashMap<Integer, Long>();
 		
+		boolean failedLock = false;
+		do {
+			// If we failed last run
+			if (failedLock) {
+				try {
+					int sleepTime = ThreadLocalRandom.current().nextInt(50, 101);
+					System.out.println(Thread.currentThread().getName() + "::" + Thread.currentThread().getId()+" Failed aquiring atleast one lock, sleeping for "+ sleepTime +" before trying again");
+					Thread.sleep(sleepTime); // Sleep for 100-500ms
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				} finally {
+					rollbacks.clear();
+					stamps.clear();
+				}
+			}
+			failedLock = false;
+			
+			// Aquiring locks
+			for (Integer integer : accountIds) {
+				AccountAndLockWrapper alw = accounts.get(integer);
+				long stamp = 0L;
+				try { 
+					stamp = alw.getLock().tryWriteLock(50, TimeUnit.MILLISECONDS);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				
+				// Did we get a lock or timeout?
+				if (alw.getLock().validate(stamp)) {
+					stamps.put(integer, stamp);
+				
+					// Remember before balance for rollback
+					Account acc = alw.getAccount();
+					rollbacks.put(acc.getId(), acc.getBalance());
+				} else {
+					stamps.forEach((id, unlockStamp) -> { accounts.get(id).getLock().unlock(unlockStamp); });
+					failedLock = true;
+					break;
+				}
+			}
+		} while(failedLock);
+		
+		// Operation stuff
 		try {
 			for (Operation operation : operations) {
-				AccountAndLockWrapper alw = accounts.get(operation.getAccountId());				
-				Account acc = alw.getAccount();
-				acc.setBalance(acc.getBalance() + operation.getAmount());
+				AccountAndLockWrapper alw = accounts.get(operation.getAccountId());
+				doActualOperation(operation, alw.getAccount());
 			}
 		} catch (Exception e) { // Since this example is a bit simple, there are no apperant exceptions that are ever raised.
-			// Rollback all if anything goes wrong
-			for (Map.Entry<Integer, Integer> entry : rollbacks.entrySet()) {
-				accounts.get(entry.getKey())
-					.getAccount().setBalance(entry.getValue());
-			}			
+			// Rollback all if anything goes wrong, the account are already locked
+			System.out.println("Something went wrong, rolling back");
+			rollbacks.forEach((id, value) -> { accounts.get(id).getAccount().setBalance(value); });
 		} finally {
 			// Unlock all
 			stamps.forEach((id, stamp) -> { accounts.get(id).getLock().unlock(stamp); });
@@ -116,7 +146,7 @@ class Bank {
 	 * @param accountId - The account to get the balance of
 	 * @return {@code int} - the balance of the account
 	 */
-	int getAccountBalance(int accountId) {
+	public int getAccountBalance(int accountId) {
 		AccountAndLockWrapper alw = accounts.get(accountId);
 		StampedLock lock = alw.getLock();
 		
@@ -124,7 +154,7 @@ class Bank {
 		Account account = alw.getAccount();
 		int toReturn = account.getBalance();
 		
-		// fail optimistic read
+		// optimistic read failed
 		if (!lock.validate(stamp)) {
 			stamp = lock.readLock();
 			try {
