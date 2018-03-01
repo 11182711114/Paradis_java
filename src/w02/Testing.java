@@ -2,6 +2,7 @@ package w02;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Calendar;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -10,23 +11,24 @@ public class Testing {
 	public static void main(String[] args) {
 
 		String NUM_THREADS = "" + 12;
-		String NUM_ACCOUNTS = "" + 1000;
-		String FACTOR = "" + 100_00;
+		String NUM_ACCOUNTS = "" + 6;
+		String FACTOR = "" + 100_000;
 		String TIMEOUT = "" + 60;
 		int iterations = 1;
 		String Ops = format((long) ((Integer.parseInt(FACTOR) * Integer.parseInt(NUM_ACCOUNTS) * 5) * iterations));
-		System.out.format("Threads: %s%nAccounts: %s%nFactor: %s%nTotal Operations: %s%nTimeout: %s%n%n", NUM_THREADS,
-				NUM_ACCOUNTS, FACTOR, Ops, TIMEOUT);
+		System.out.format(
+				"[%tH:%tM:%tS::%tL]%nThreads: %s%nAccounts: %s%nFactor: %s%nTotal Operations: %s%nTimeout: %s%n%n",
+				Calendar.getInstance(), Calendar.getInstance(), Calendar.getInstance(), Calendar.getInstance(),
+				NUM_THREADS, NUM_ACCOUNTS, FACTOR, Ops, TIMEOUT);
 
 		String[] testArgs = { NUM_THREADS, NUM_ACCOUNTS, FACTOR, TIMEOUT };
 
-		System.out.println("Stamped");
 		long start = System.nanoTime();
 		for (int i = 0; i < iterations; i++) {
 			w02.stamped.Program.run(testArgs);
 		}
 		long done = System.nanoTime();
-		System.out.println("Batch of " + iterations + " iterations done in: " + (done - start) / 1E6 + "ms");
+//		System.out.println("Batch of " + iterations + " iterations done in: " + (done - start) / 1E6 + "ms");
 
 		// System.out.println("Intrinsic locks");
 		// long startSync = System.nanoTime();

@@ -2,16 +2,19 @@
 
 package w02.stamped;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 public class Program {
 	// Static variables.
 	private static int NUM_THREADS = 12;
-	private static int NUM_ACCOUNTS = 20;
-	private static int FACTOR = 10000;
+	private static int NUM_ACCOUNTS = 6;
+	private static int FACTOR = 100000;
 	private static int TIMEOUT = 60; // Seconds;
 	private static int NUM_TRANSACTIONS = NUM_ACCOUNTS * FACTOR;
 	private static Integer[] accountIds = new Integer[NUM_ACCOUNTS];
@@ -40,7 +43,8 @@ public class Program {
 
 	// You may use this test to test thread-safety for operations.
 	private static void runTestOperations() {
-		ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
+		 ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
+//		ExecutorService executor = new ScheduledThreadPoolExecutor(NUM_THREADS);
 		// ExecutorService executor = new ForkJoinPool(NUM_THREADS);
 
 		ReadBalance[] readers = new ReadBalance[NUM_TRANSACTIONS * 2];
@@ -55,18 +59,17 @@ public class Program {
 
 		try {
 			long time = System.nanoTime();
-			// for (int i = 0; i < NUM_TRANSACTIONS * 2; i++) {
-			// executor.execute(operations[i]);
-			// executor.execute(readers[i]);
-			// }
 			IntStream.range(0, operations.length).forEach(i -> {
 				executor.execute(operations[i]);
 				executor.execute(readers[i]);
 			});
-			// IntStream.range(0, operations.length).parallel()
-			// .mapToObj(i -> new Pair<Operation, ReadBalance>(operations[i],
-			// readers[i])).parallel()
-			// .forEach(pair -> { pair.t.run(); pair.v.run(); });
+			long loopDone = System.nanoTime();
+			Future<Long> done = executor.submit(new Callable<Long>() {
+				@Override
+				public Long call() throws Exception {
+					return System.nanoTime();
+				}
+			});
 			executor.shutdown();
 			boolean completed = executor.awaitTermination(TIMEOUT, TimeUnit.SECONDS);
 			if (!completed)
@@ -74,6 +77,7 @@ public class Program {
 			time = System.nanoTime() - time;
 
 			System.out.println("Test operations finished.");
+			System.out.println("Delay " + (done.get() - loopDone)/1E6 + "ms" );
 			System.out.println("Completed: " + completed);
 			System.out.println("Time [ms]: " + time / 1000000);
 
@@ -104,13 +108,17 @@ public class Program {
 
 		try {
 			long time = System.nanoTime();
-			// for (int i = 0; i < NUM_TRANSACTIONS; i++) {
-			// executor.execute(transactions[i]);
-			// executor.execute(readers[i]);
-			// }
 			IntStream.range(0, transactions.length).forEach(i -> {
 				executor.execute(transactions[i]);
 				executor.execute(readers[i]);
+			});
+			long loopDone = System.nanoTime();
+			Future<Long> done = executor.submit(new Callable<Long>() {
+				@Override
+				public Long call() throws Exception {
+					return System.nanoTime();
+				}
+
 			});
 			executor.shutdown();
 			boolean completed = executor.awaitTermination(TIMEOUT, TimeUnit.SECONDS);
@@ -118,7 +126,8 @@ public class Program {
 				System.out.println("Transaction failed to complete something");
 			time = System.nanoTime() - time;
 
-			System.out.println("Test transactions finished.");
+			System.out.println("\nTest transactions finished.");
+			System.out.println("Delay " + (done.get() - loopDone)/1E6 + "ms" );
 			System.out.println("Completed: " + completed);
 			System.out.println("Time [ms]: " + time / 1000000);
 
