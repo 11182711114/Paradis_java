@@ -165,6 +165,32 @@ public class Bank {
 			});
 		}
 	}
+	/** Alternative transaaction locking each account individually
+	 * @param operations
+	 * @param rollbacks
+	 */
+	@SuppressWarnings("unused")
+	private void doTransactionOperationLockIndividual(List<Operation> operations, Map<Integer, Integer> rollbacks) {
+		// Operation stuff
+		try {
+			operations.stream().forEach(op -> {
+				AccountAndLockWrapper alw = accounts.get(op.getAccountId());
+				long stamp = alw.getLock().writeLock();
+				try {
+				doActualOperation(op, accounts.get(op.getAccountId()).getAccount());
+				} finally {
+					alw.getLock().unlock(stamp);
+				}
+			});
+		} catch (IllegalArgumentException e) { // Since this example is a bit simple, there are no apperant exceptions
+												// that are ever raised.
+			// Rollback all if anything goes wrong, the account are already locked
+			System.out.println("Something went wrong, rolling back");
+			rollbacks.forEach((id, value) -> {
+				accounts.get(id).getAccount().setBalance(value);
+			});
+		}
+	}
 
 	/**
 	 * Runs all the operations in a transaction, if one fails all are rolled back to
@@ -182,11 +208,12 @@ public class Bank {
 		Map<Integer, Integer> rollbacks = new HashMap<>();
 		Map<Integer, Long> stamps = new HashMap<Integer, Long>();
 
-		// Note: locking all participants ahead of time is far less efficient than locking them one by one and 
-		// rolling back all if we fail because failures are far less likely and we avoid having to handle deadlocks
+		// Note: locking all participants ahead of time is far less efficient than locking them one by one.
+		// Rolling back all if we fail because failures are far less likely and we avoid having to handle deadlocks
 		// particularly if the transaction involves a large number of accounts
 		lockAll(accountIds, rollbacks, stamps, 5, 10, 500);
 		doTransactionOperation(operations, rollbacks);
+//		doTransactionOperationLockIndividual(operations, rollbacks);
 
 		stamps.forEach((id, stamp) -> {
 			accounts.get(id).getLock().unlock(stamp);
