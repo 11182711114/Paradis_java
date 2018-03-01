@@ -151,10 +151,8 @@ public class Bank {
 	 * Performs the given operations, if exception is raised from the operations the
 	 * accounts are rolled back to previous state according to rollbacks.
 	 * 
-	 * @param operations
-	 *            - The operations to execute
-	 * @param rollbacks
-	 *            - Account.id => Before balance
+	 * @param operations - The operations to execute
+	 * @param rollbacks - Account.id => Before balance
 	 */
 	private void doTransactionOperation(List<Operation> operations, Map<Integer, Integer> rollbacks) {
 		// Operation stuff
