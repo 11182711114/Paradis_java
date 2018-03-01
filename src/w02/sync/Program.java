@@ -115,7 +115,7 @@ public class Program {
 	}
 	
 	// Entry point.
-	public static void main(String[] args) {
+	public static void run(String[] args) {
 		if (args.length > 0) {
 			NUM_THREADS = Integer.parseInt(args[0]);
 			NUM_ACCOUNTS = Integer.parseInt(args[1]);
