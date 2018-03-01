@@ -49,11 +49,6 @@ public class Bank {
 
 	// Instance variables.
 	private int accountCounter = 0;
-
-	// While not covered in the standard test, HashMap is not thread-safe and can
-	// break if accounts are added while transaction/operation work is running,
-	// ConcurrentHashMap does striped locking and thus does not heavily impact
-	// performance unless all read/writes happen in the same stripe.
 	private Map<Integer, AccountAndLockWrapper> accounts = new ConcurrentHashMap<>();
 
 	// Instance methods.
