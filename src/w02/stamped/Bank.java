@@ -98,18 +98,14 @@ public class Bank {
 	 * @param sleepFloor - Minimum(inclusive) amount of time to sleep if timed out waiting for a lock
 	 * @param sleepCeil - Max(inclusive) amount of time to sleep if timed out waiting for a lock
 	 */
-	private void lockAll(List<Integer> accountIds, Map<Integer, Integer> rollbacks, Map<Integer, Long> stamps,
-			int timeoutms, int sleepFloor, int sleepCeil) {
+	private void lockAll(List<Integer> accountIds, Map<Integer, Integer> rollbacks, Map<Integer, Long> stamps, int timeoutms, int sleepFloor, int sleepCeil) {
 		boolean failedLock = false;
 		do {
 			// If we failed last run
 			if (failedLock) {
 				try {
 					int sleepTime = ThreadLocalRandom.current().nextInt(sleepFloor, sleepCeil + 1);
-					// System.out.println(Thread.currentThread().getName() + "::" +
-					// Thread.currentThread().getId()+" Failed aquiring atleast one lock, sleeping
-					// for "+ sleepTime +"ms before trying again");
-					Thread.sleep(sleepTime); // Sleep for 100-500ms
+					Thread.sleep(sleepTime);
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
 				} finally {
@@ -157,6 +153,7 @@ public class Bank {
 	private void doTransactionOperation(List<Operation> operations, Map<Integer, Integer> rollbacks) {
 		// Operation stuff
 		try {
+			//FIXME: Remove
 			// for (Operation operation : operations) {
 			// AccountAndLockWrapper alw = accounts.get(operation.getAccountId());
 			// doActualOperation(operation, alw.getAccount());
@@ -190,6 +187,9 @@ public class Bank {
 		Map<Integer, Integer> rollbacks = new HashMap<>();
 		Map<Integer, Long> stamps = new HashMap<Integer, Long>();
 
+		// Note: locking all participants ahead of time is far less efficient than locking them one by one and 
+		// rolling back all if we fail because failures are far less likely and we avoid having to handle deadlocks
+		// particularly if the transaction involves a large number of accounts
 		lockAll(accountIds, rollbacks, stamps, 5, 10, 500);
 		doTransactionOperation(operations, rollbacks);
 
