@@ -6,3 +6,19 @@ Program3:
 Execution time (seconds): 0.807193681
 Program4:
 Execution time (seconds): 0.798786398
+
+
+Discussion:
+
+1 - Producer-consumer
+Since the work in this example is bounded, I dont think this is a good way of doing it.
+It could be favorable if the work would take a very long time and the program should be able to pause and save the current progress to be picked up later.
+
+2 - parallel stream
+The most straight forward way of doing, both in terms of code verbosity and logic, a mix of parallelism(in terms of WebPages) and sequencial(download -> analyze -> categorize)
+
+3 - CompletableFuture
+If the work didnt have to be done sequencially, i.e. download -> analyze -> categorize, this would probably had been more efficient, however as this is not the case, I'm more favorable towards 2 or 4 as they are more straight forward and less verbose.
+
+4 - Bulk ConcurrentHashMap
+Essentially the same as 2, this is probably implemented using streams "under the hood" with some management for the parallalizationFactor
