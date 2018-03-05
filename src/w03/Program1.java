@@ -1,5 +1,5 @@
 // Peter Idestam-Almquist, 2018-02-26.
-// Fredrik Larsson
+// Fredrik Larsson - frla9839
 
 // [Do necessary modifications of this file.]
 
@@ -67,6 +67,7 @@ public class Program1 {
 			Categorizer categorizer = new Categorizer(analyzerDone, categorizerDone);
 			tPool.execute(categorizer);
 		});
+		
 		tPool.shutdown();
 		try {
 			tPool.awaitTermination(5000, TimeUnit.MILLISECONDS);
@@ -83,79 +84,79 @@ public class Program1 {
 		System.out.println("Execution time (seconds): " + (stop - start) / 1.0E9);
 	}
 
-}
-
-class Downloader implements Runnable {
-	BlockingQueue<WebPage> input;
-	BlockingQueue<WebPage> output;
-
-	public Downloader(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
-		this.input = input;
-		this.output = output;
-	}
-
-	@Override
-	public void run() {
-		while (!input.isEmpty()) {
-			try {
-				WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
-				if (page == null)
-					break;
-				page.download();
-				output.put(page);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+	static class Downloader implements Runnable {
+		BlockingQueue<WebPage> input;
+		BlockingQueue<WebPage> output;
+	
+		public Downloader(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
+			this.input = input;
+			this.output = output;
 		}
-	}
-}
-
-class Analyzer implements Runnable {
-	BlockingQueue<WebPage> input;
-	BlockingQueue<WebPage> output;
-
-	public Analyzer(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
-		this.input = input;
-		this.output = output;
-	}
-
-	@Override
-	public void run() {
-		while (!input.isEmpty()) {
-			try {
-				WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
-				if (page != null) {
-					page.analyze();
-					output.offer(page);
+	
+		@Override
+		public void run() {
+			while (!input.isEmpty()) {
+				try {
+					WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
+					if (page == null)
+						break;
+					page.download();
+					output.put(page);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
 			}
 		}
 	}
-}
-
-class Categorizer implements Runnable {
-	BlockingQueue<WebPage> input;
-	BlockingQueue<WebPage> output;
-
-	public Categorizer(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
-		this.input = input;
-		this.output = output;
-	}
-
-	@Override
-	public void run() {
-		while (!input.isEmpty()) {
-			try {
-				WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
-				if (page != null) {
-					page.categorize();
-					output.offer(page);
+	
+	static class Analyzer implements Runnable {
+		BlockingQueue<WebPage> input;
+		BlockingQueue<WebPage> output;
+	
+		public Analyzer(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
+			this.input = input;
+			this.output = output;
+		}
+	
+		@Override
+		public void run() {
+			while (!input.isEmpty()) {
+				try {
+					WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
+					if (page != null) {
+						page.analyze();
+						output.offer(page);
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
 			}
 		}
 	}
+	
+	static class Categorizer implements Runnable {
+		BlockingQueue<WebPage> input;
+		BlockingQueue<WebPage> output;
+	
+		public Categorizer(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
+			this.input = input;
+			this.output = output;
+		}
+	
+		@Override
+		public void run() {
+			while (!input.isEmpty()) {
+				try {
+					WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
+					if (page != null) {
+						page.categorize();
+						output.offer(page);
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
 }
