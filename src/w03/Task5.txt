@@ -1,0 +1,8 @@
+Program1:
+Execution time (seconds): 0.77190102
+Program2:
+Execution time (seconds): 0.808511038
+Program3:
+Execution time (seconds): 0.807193681
+Program4:
+Execution time (seconds): 0.798786398
