@@ -1,7 +1,5 @@
 package w02;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Calendar;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
@@ -11,7 +9,7 @@ public class Testing {
 	public static void main(String[] args) {
 
 		String NUM_THREADS = "" + 12;
-		String NUM_ACCOUNTS = "" + 6;
+		String NUM_ACCOUNTS = "" + 12;
 		String FACTOR = "" + 100_000;
 		String TIMEOUT = "" + 60;
 		int iterations = 1;
@@ -68,43 +66,5 @@ public class Testing {
 		long truncated = value / (divideBy / 10); // the number part of the output times 10
 		boolean hasDecimal = truncated < 100 && (truncated / 10d) != (truncated / 10);
 		return hasDecimal ? (truncated / 10d) + suffix : (truncated / 10) + suffix;
-	}
-}
-
-class MultiOutputStream extends OutputStream {
-	OutputStream[] outputStreams;
-
-	public MultiOutputStream(OutputStream... outputStreams) {
-		this.outputStreams = outputStreams;
-	}
-
-	@Override
-	public void write(int b) throws IOException {
-		for (OutputStream out : outputStreams)
-			out.write(b);
-	}
-
-	@Override
-	public void write(byte[] b) throws IOException {
-		for (OutputStream out : outputStreams)
-			out.write(b);
-	}
-
-	@Override
-	public void write(byte[] b, int off, int len) throws IOException {
-		for (OutputStream out : outputStreams)
-			out.write(b, off, len);
-	}
-
-	@Override
-	public void flush() throws IOException {
-		for (OutputStream out : outputStreams)
-			out.flush();
-	}
-
-	@Override
-	public void close() throws IOException {
-		for (OutputStream out : outputStreams)
-			out.close();
 	}
 }

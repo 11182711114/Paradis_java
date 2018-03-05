@@ -61,7 +61,7 @@ public class Program {
 			long time = System.nanoTime();
 			IntStream.range(0, operations.length).forEach(i -> {
 				executor.execute(operations[i]);
-				executor.execute(readers[i]);
+//				executor.execute(readers[i]);
 			});
 			long loopDone = System.nanoTime();
 			Future<Long> done = executor.submit(new Callable<Long>() {
@@ -77,7 +77,7 @@ public class Program {
 			time = System.nanoTime() - time;
 
 			System.out.println("Test operations finished.");
-			System.out.println("Delay " + (done.get() - loopDone)/1E6 + "ms" );
+			System.out.format("Delay [ms]: %.0f%n", (done.get() - loopDone)/1E6);
 			System.out.println("Completed: " + completed);
 			System.out.println("Time [ms]: " + time / 1000000);
 
@@ -110,7 +110,7 @@ public class Program {
 			long time = System.nanoTime();
 			IntStream.range(0, transactions.length).forEach(i -> {
 				executor.execute(transactions[i]);
-				executor.execute(readers[i]);
+//				executor.execute(readers[i]);
 			});
 			long loopDone = System.nanoTime();
 			Future<Long> done = executor.submit(new Callable<Long>() {
@@ -127,7 +127,7 @@ public class Program {
 			time = System.nanoTime() - time;
 
 			System.out.println("\nTest transactions finished.");
-			System.out.println("Delay " + (done.get() - loopDone)/1E6 + "ms" );
+			System.out.format("Delay [ms]: %.0f%n", (done.get() - loopDone)/1E6);
 			System.out.println("Completed: " + completed);
 			System.out.println("Time [ms]: " + time / 1000000);
 
