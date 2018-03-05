@@ -50,7 +50,8 @@ public class Program1 {
 
 		// [Do modify this sequential part of the program.]
 		// This is kind of cheating in a consumer producer way but since the actual work
-		// is bounded this should be the most efficient way given;
+		// is bounded this should be the most efficient way;
+		// FIXME: Change this to be less cheaty?
 		BlockingQueue<WebPage> downloaderDone = new LinkedBlockingQueue<>();
 		BlockingQueue<WebPage> analyzerDone = new LinkedBlockingQueue<>();
 		BlockingQueue<WebPage> categorizerDone = new LinkedBlockingQueue<>();
