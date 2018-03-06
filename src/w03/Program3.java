@@ -7,8 +7,10 @@ package w03;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 // [You are welcome to add some import statements.]
 
@@ -34,22 +36,44 @@ public class Program3 {
 	public static void main(String[] args) {
 		// Initialize the list of webpages.
 		initialize();
-
 		// Start timing.
 		long start = System.nanoTime();
+		
+		// [Do modify this sequential part of the program.]
 		Arrays.stream(webPages).forEach(wp -> {
 			CompletableFuture.supplyAsync(() -> {
 				wp.download();
 				return wp;
-			}).thenApply(x -> {
-				x.analyze();
-				return x;
-			}).thenAccept(y -> {
-				y.categorize();
+			}).thenApply(wpAfterDownload -> {
+				wpAfterDownload.analyze();
+				return wpAfterDownload;
+			}).thenAccept(wpAfterAnalysis -> {
+				wpAfterAnalysis.categorize();
 			});
 		});
-
 		ForkJoinPool.commonPool().awaitQuiescence(5000, TimeUnit.MILLISECONDS);
+
+		// alternative, no real difference, above is cleaner
+//		CompletableFuture<?>[] futures = new CompletableFuture<?>[webPages.length];
+//		IntStream.range(0, webPages.length).forEach(i -> {
+//			WebPage wp = webPages[i];
+//			CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> {
+//				wp.download();
+//				return wp;
+//			}).thenApply(x -> {
+//				x.analyze();
+//				return x;
+//			}).thenAccept(y -> {
+//				y.categorize();
+//			});
+//			futures[i] = future;
+//		});
+//
+//		try {
+//			CompletableFuture.allOf(futures).get();
+//		} catch (InterruptedException | ExecutionException e) {
+//			e.printStackTrace();
+//		}
 
 		// Stop timing.
 		long stop = System.nanoTime();
