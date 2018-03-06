@@ -5,11 +5,14 @@
 
 package w03;
 
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 // [You are welcome to add some import statements.]
@@ -55,25 +58,40 @@ public class Program1 {
 		BlockingQueue<WebPage> downloaderDone = new LinkedBlockingQueue<>();
 		BlockingQueue<WebPage> analyzerDone = new LinkedBlockingQueue<>();
 		BlockingQueue<WebPage> categorizerDone = new LinkedBlockingQueue<>();
-		IntStream.range(0, threads).forEach(i -> {
-			Downloader dwlder = new Downloader(wpgs, downloaderDone);
-			tPool.execute(dwlder);
-		});
-		IntStream.range(0, threads).forEach(i -> {
-			Analyzer analyzer = new Analyzer(downloaderDone, analyzerDone);
-			tPool.execute(analyzer);
-		});
-		IntStream.range(0, threads).forEach(i -> {
-			Categorizer categorizer = new Categorizer(analyzerDone, categorizerDone);
-			tPool.execute(categorizer);
-		});
 		
-		tPool.shutdown();
+		List<Worker> workers = IntStream.range(0, threads).mapToObj(i -> {
+			// Split the workers equally-ish
+			Worker worker = null;
+			switch (i % 3) {
+			case 0:
+				worker = new Downloader(wpgs, downloaderDone); break;
+			case 1: 
+				worker = new Analyzer(downloaderDone, analyzerDone); break;
+			default:
+				worker = new Categorizer(analyzerDone, categorizerDone); break;
+			}
+			tPool.submit(worker);
+			return worker;
+		}).collect(Collectors.toList());
+
+		
 		try {
+			synchronized (categorizerDone) {
+				while (categorizerDone.size() < NUM_WEBPAGES) {
+					categorizerDone.wait();
+				}
+			}
+
+			workers.forEach(worker -> {
+				worker.stop();
+			});
+			
+			tPool.shutdown();
 			tPool.awaitTermination(5000, TimeUnit.MILLISECONDS);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
 		}
+		
 		// Stop timing.
 		long stop = System.nanoTime();
 
@@ -84,18 +102,24 @@ public class Program1 {
 		System.out.println("Execution time (seconds): " + (stop - start) / 1.0E9);
 	}
 
-	static class Downloader implements Runnable {
-		BlockingQueue<WebPage> input;
-		BlockingQueue<WebPage> output;
+	static interface Worker extends Callable<Void> {		
+		public void stop();
+	}
+	
+	static class Downloader implements Worker {
+		private BlockingQueue<WebPage> input;
+		private BlockingQueue<WebPage> output;
+		private volatile boolean running;
 	
 		public Downloader(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
 			this.input = input;
 			this.output = output;
 		}
-	
+
 		@Override
-		public void run() {
-			while (!input.isEmpty()) {
+		public Void call() throws Exception {
+			running = true;
+			while (running) {
 				try {
 					WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
 					if (page == null)
@@ -106,56 +130,83 @@ public class Program1 {
 					e.printStackTrace();
 				}
 			}
+			return null;
+		}
+
+		@Override
+		public void stop() {
+			running = false;
 		}
 	}
 	
-	static class Analyzer implements Runnable {
-		BlockingQueue<WebPage> input;
-		BlockingQueue<WebPage> output;
+	static class Analyzer implements Worker {
+		private BlockingQueue<WebPage> input;
+		private BlockingQueue<WebPage> output;
+		private volatile boolean running;
 	
 		public Analyzer(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
 			this.input = input;
 			this.output = output;
 		}
-	
+
 		@Override
-		public void run() {
-			while (!input.isEmpty()) {
+		public Void call() throws Exception {
+			running = true;
+			while (running) {
 				try {
 					WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
-					if (page != null) {
-						page.analyze();
-						output.offer(page);
-					}
+					if (page == null) 
+						continue;
+					page.analyze();
+					output.offer(page);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
+			return null;
+		}
+
+		@Override
+		public void stop() {
+			running = false;
 		}
 	}
 	
-	static class Categorizer implements Runnable {
-		BlockingQueue<WebPage> input;
-		BlockingQueue<WebPage> output;
+	static class Categorizer implements Worker {
+		private BlockingQueue<WebPage> input;
+		private BlockingQueue<WebPage> output;
+		private volatile boolean running;
 	
 		public Categorizer(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
 			this.input = input;
 			this.output = output;
 		}
-	
+
 		@Override
-		public void run() {
-			while (!input.isEmpty()) {
+		public Void call() throws Exception {
+			running = true;
+			while (running) {
+				if (output.size() == NUM_WEBPAGES) {
+					synchronized (output) {
+						output.notify();
+					}
+				}
 				try {
 					WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
-					if (page != null) {
-						page.categorize();
-						output.offer(page);
-					}
+					if (page == null) 
+						continue;
+					page.categorize();
+					output.offer(page);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
+			return null;
+		}
+
+		@Override
+		public void stop() {
+			running = false;
 		}
 	}
 
