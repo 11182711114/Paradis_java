@@ -52,23 +52,19 @@ public class Program1 {
 		long start = System.nanoTime();
 
 		// [Do modify this sequential part of the program.]
-		// This is kind of cheating in a consumer producer way but since the actual work
-		// is bounded this should be the most efficient way;
-		// FIXME: Change this to be less cheaty?
-		BlockingQueue<WebPage> downloaderDone = new LinkedBlockingQueue<>();
-		BlockingQueue<WebPage> analyzerDone = new LinkedBlockingQueue<>();
-		BlockingQueue<WebPage> categorizerDone = new LinkedBlockingQueue<>();
+		BlockingQueue<WebPage> downloaderResult = new LinkedBlockingQueue<>();
+		BlockingQueue<WebPage> analyzerResult = new LinkedBlockingQueue<>();
+		BlockingQueue<WebPage> categorizerResult = new LinkedBlockingQueue<>();
 		
 		List<Worker> workers = IntStream.range(0, threads).mapToObj(i -> {
-			// Split the workers equally-ish
+			// Split the Workers equally-ish, 
+			// priority for free spots are taken in priority of their appearance in the switch
+			// i.e. Downloader>Analyzer>Categorizer
 			Worker worker = null;
 			switch (i % 3) {
-			case 0:
-				worker = new Downloader(wpgs, downloaderDone); break;
-			case 1: 
-				worker = new Analyzer(downloaderDone, analyzerDone); break;
-			default:
-				worker = new Categorizer(analyzerDone, categorizerDone); break;
+				case 0:	worker = new Downloader(wpgs, downloaderResult); break;
+				case 1: worker = new Analyzer(downloaderResult, analyzerResult); break;
+				default: worker = new Categorizer(analyzerResult, categorizerResult); break;
 			}
 			tPool.submit(worker);
 			return worker;
@@ -76,9 +72,10 @@ public class Program1 {
 
 		
 		try {
-			synchronized (categorizerDone) {
-				while (categorizerDone.size() < NUM_WEBPAGES) {
-					categorizerDone.wait();
+			// Wait for the Categorizers to finish
+			synchronized (categorizerResult) {
+				while (categorizerResult.size() < NUM_WEBPAGES) {
+					categorizerResult.wait();
 				}
 			}
 
