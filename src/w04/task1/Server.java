@@ -71,7 +71,6 @@ public class Server {
 		
 		try {
 			listeningSocket.bind(new InetSocketAddress(host, port), backlogLimit);
-//			InetAddress.getByName(host);
 		} catch (IOException e) {
 			log.exception(e);
 			return false;

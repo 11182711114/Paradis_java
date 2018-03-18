@@ -1,7 +1,9 @@
 package w04.task1;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
@@ -34,32 +36,33 @@ public class SocketReader<T extends Serializable> implements Runnable {
 	@Override
 	public void run() {
 		log.debug("Reader starting");
-		running = true;
-		ObjectInputStream reader = null;
-		try {
-			reader = new ObjectInputStream(input);
-		} catch (IOException e1) {
-			log.exception(e1);
-		}
+		running = true;		
+//		ObjectInputStream reader = null;
+//		try {
+//			reader = new ObjectInputStream(input);
+//		} catch (IOException e1) {
+//			log.exception(e1);
+//		}
+		
+		BufferedReader reader = new BufferedReader(new InputStreamReader(input));
 		
 		while(running) {
 			try {
 				log.trace("Waiting for data to read");
-				Object read = reader.readObject();
+				Object read = reader.readLine();
 				if (read == null) // can be null if the thread is interrupted while waiting
 					continue;
 				
-				log.trace("Data to read found");
-				if (read instanceof Serializable) {
-					log.trace("Data is Serializable");
-					inputBuffer.put((T) read); //FIXME This is bad? Should be bad
-				}
+//				log.trace("Data to read found");
+//				if (read instanceof Serializable) {
+//					log.trace("Data is Serializable");
+//					inputBuffer.put((T) read); //FIXME This is bad? Should be bad
+//				}
+				inputBuffer.put((T) read);
 				
 				
 				
 			} catch (IOException e) {
-				log.exception(e);
-			} catch (ClassNotFoundException e) {
 				log.exception(e);
 			} catch (InterruptedException e) {
 				log.exception(e);

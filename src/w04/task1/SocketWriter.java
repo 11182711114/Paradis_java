@@ -3,6 +3,7 @@ package w04.task1;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,26 +30,30 @@ public class SocketWriter<T extends Serializable> implements Runnable {
 	public void run() {
 		log.debug("Writer starting");
 		running = true;
-		ObjectOutputStream writer = null;
-		try {
-			writer = new ObjectOutputStream(output);
-		} catch (IOException e1) {
-			log.exception(e1);
-		}
+//		ObjectOutputStream writer = null;
+//		try {
+//			writer = new ObjectOutputStream(output);
+//		} catch (IOException e1) {
+//			log.exception(e1);
+//		}
+		
+		PrintWriter pw = new PrintWriter(output, true);
 		
 		while(running) {
 			try {
 				log.debug("Checking for data to write");
 				T toWrite = outputBuffer.take();
 				log.debug("New data to write");
-				if (toWrite != null)
-					writer.writeObject(toWrite);
+//				if (toWrite != null)
+//					writer.writeObject(toWrite);
+				pw.println(toWrite);
 				
 			} catch (InterruptedException e) {
 				log.exception(e);
-			} catch (IOException e) {
-				log.exception(e);
-			}
+			} 
+//			catch (IOException e) {
+//				log.exception(e);
+//			}
 		}
 	}
 	
