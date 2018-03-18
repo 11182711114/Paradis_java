@@ -1,6 +1,6 @@
 // Peter Idestam-Almquist, 2018-02-21.
 
-package w02.sync;
+package paradis.assignment2.sync;
 
 import java.util.List;
 import java.util.Map;

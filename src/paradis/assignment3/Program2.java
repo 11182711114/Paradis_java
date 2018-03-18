@@ -3,7 +3,7 @@
 
 // [Do necessary modifications of this file.]
 
-package w03;
+package paradis.assignment3;
 
 import java.util.Arrays;
 

@@ -1,7 +1,7 @@
 // Peter Idestam-Almquist, 2017-03-10.
 // Server, multi-threaded, accepting several simultaneous clients.
 
-package w04.supplied;
+package paradis.assignment4.supplied;
 
 import java.net.Socket;
 import java.net.ServerSocket;

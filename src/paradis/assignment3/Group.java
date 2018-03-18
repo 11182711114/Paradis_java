@@ -1,4 +1,4 @@
-package w03;
+package paradis.assignment3;
 
 public class Group {
 	public static void main(String[] args) {

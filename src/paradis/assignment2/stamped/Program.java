@@ -1,6 +1,6 @@
 // Peter Idestam-Almquist, 2018-02-21.
 
-package w02.stamped;
+package paradis.assignment2.stamped;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;

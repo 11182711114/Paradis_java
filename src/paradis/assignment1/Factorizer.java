@@ -1,4 +1,4 @@
-package w01;
+package paradis.assignment1;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

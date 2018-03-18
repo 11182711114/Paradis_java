@@ -1,4 +1,4 @@
-package w02.stamped;
+package paradis.assignment2.stamped;
 
 import java.util.HashMap;
 import java.util.List;

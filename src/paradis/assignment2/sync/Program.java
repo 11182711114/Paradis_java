@@ -1,12 +1,12 @@
 // Peter Idestam-Almquist, 2018-02-21.
 
-package w02.sync;
+package paradis.assignment2.sync;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import w02.sync.ReadBalance;
+import paradis.assignment2.sync.ReadBalance;
 
 public class Program {
 	// Static variables.

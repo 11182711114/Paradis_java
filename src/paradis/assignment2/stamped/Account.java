@@ -1,6 +1,6 @@
 // Peter Idestam-Almquist, 2018-02-21.
 
-package w02.stamped;
+package paradis.assignment2.stamped;
 
 class Account {
 	// Instance variables.

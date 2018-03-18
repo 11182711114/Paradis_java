@@ -1,7 +1,7 @@
 // Peter Idestam-Almquist, 2018-02-26.
 
 // [Do NOT modify this file.]
-package w03;
+package paradis.assignment3;
 
 import java.util.Random;
 import java.net.URI;

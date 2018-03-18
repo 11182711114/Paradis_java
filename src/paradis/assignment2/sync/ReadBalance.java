@@ -1,6 +1,6 @@
-package w02.sync;
+package paradis.assignment2.sync;
 
-import w02.sync.Bank;
+import paradis.assignment2.sync.Bank;
 
 public class ReadBalance implements Runnable {
 	private Bank bank;

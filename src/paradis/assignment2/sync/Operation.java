@@ -1,6 +1,6 @@
 // Peter Idestam-Almquist, 2018-02-21.
 
-package w02.stamped;
+package paradis.assignment2.sync;
 
 class Operation implements Runnable {
 	final int ACCOUNT_ID;

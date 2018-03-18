@@ -1,4 +1,4 @@
-package w02.stamped;
+package paradis.assignment2.stamped;
 
 public class ReadBalance implements Runnable {
 	private Bank bank;

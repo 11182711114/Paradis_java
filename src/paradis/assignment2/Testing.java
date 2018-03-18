@@ -1,4 +1,4 @@
-package w02;
+package paradis.assignment2;
 
 import java.util.Calendar;
 import java.util.Map.Entry;
@@ -23,7 +23,7 @@ public class Testing {
 
 		long start = System.nanoTime();
 		for (int i = 0; i < iterations; i++) {
-			w02.stamped.Program.run(testArgs);
+			paradis.assignment2.stamped.Program.run(testArgs);
 		}
 		long done = System.nanoTime();
 //		System.out.println("Batch of " + iterations + " iterations done in: " + (done - start) / 1E6 + "ms");
