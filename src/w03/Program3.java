@@ -38,42 +38,20 @@ public class Program3 {
 		initialize();
 		// Start timing.
 		long start = System.nanoTime();
-		
+
 		// [Do modify this sequential part of the program.]
 		Arrays.stream(webPages).forEach(wp -> {
 			CompletableFuture.supplyAsync(() -> {
 				wp.download();
 				return wp;
-			}).thenApply(wpAfterDownload -> {
-				wpAfterDownload.analyze();
-				return wpAfterDownload;
-			}).thenAccept(wpAfterAnalysis -> {
-				wpAfterAnalysis.categorize();
+			}).thenApply(wpA -> {
+				wpA.analyze();
+				return wpA;
+			}).thenAccept(wpC -> {
+				wpC.categorize();
 			});
 		});
 		ForkJoinPool.commonPool().awaitQuiescence(5000, TimeUnit.MILLISECONDS);
-
-		// alternative, no real difference, above is cleaner
-//		CompletableFuture<?>[] futures = new CompletableFuture<?>[webPages.length];
-//		IntStream.range(0, webPages.length).forEach(i -> {
-//			WebPage wp = webPages[i];
-//			CompletableFuture<Void> future = CompletableFuture.supplyAsync(() -> {
-//				wp.download();
-//				return wp;
-//			}).thenApply(x -> {
-//				x.analyze();
-//				return x;
-//			}).thenAccept(y -> {
-//				y.categorize();
-//			});
-//			futures[i] = future;
-//		});
-//
-//		try {
-//			CompletableFuture.allOf(futures).get();
-//		} catch (InterruptedException | ExecutionException e) {
-//			e.printStackTrace();
-//		}
 
 		// Stop timing.
 		long stop = System.nanoTime();

@@ -55,22 +55,22 @@ public class Program1 {
 		BlockingQueue<WebPage> downloaderResult = new LinkedBlockingQueue<>();
 		BlockingQueue<WebPage> analyzerResult = new LinkedBlockingQueue<>();
 		BlockingQueue<WebPage> categorizerResult = new LinkedBlockingQueue<>();
-		
+
 		List<Worker> workers = IntStream.range(0, threads).mapToObj(i -> {
-			// Split the Workers equally-ish, 
-			// priority for free spots are taken in priority of their appearance in the switch
+			// Split the Workers equally-ish,
+			// priority for free spots are taken in priority of their appearance in the
+			// switch
 			// i.e. Downloader>Analyzer>Categorizer
 			Worker worker = null;
 			switch (i % 3) {
-				case 0:	worker = new Downloader(wpgs, downloaderResult); break;
-				case 1: worker = new Analyzer(downloaderResult, analyzerResult); break;
-				default: worker = new Categorizer(analyzerResult, categorizerResult); break;
+			case 0:		worker = new Downloader(wpgs, downloaderResult); break;
+			case 1:		worker = new Analyzer(downloaderResult, analyzerResult); break;
+			default:	worker = new Categorizer(analyzerResult, categorizerResult); break;
 			}
 			tPool.submit(worker);
 			return worker;
 		}).collect(Collectors.toList());
 
-		
 		try {
 			// Wait for the Categorizers to finish
 			synchronized (categorizerResult) {
@@ -82,13 +82,13 @@ public class Program1 {
 			workers.forEach(worker -> {
 				worker.stop();
 			});
-			
+
 			tPool.shutdown();
 			tPool.awaitTermination(5000, TimeUnit.MILLISECONDS);
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();
 		}
-		
+
 		// Stop timing.
 		long stop = System.nanoTime();
 
@@ -99,15 +99,23 @@ public class Program1 {
 		System.out.println("Execution time (seconds): " + (stop - start) / 1.0E9);
 	}
 
-	static interface Worker extends Callable<Void> {		
+	static interface Worker extends Callable<Void> {
 		public void stop();
 	}
 	
+	static interface ProducerCosumer<E> extends Producer<E>, Consumer<E> {}
+	static interface Producer<E> {
+		public E produce();		
+	}
+	static interface Consumer<E> {
+		public void consume();
+	}
+
 	static class Downloader implements Worker {
 		private BlockingQueue<WebPage> input;
 		private BlockingQueue<WebPage> output;
 		private volatile boolean running;
-	
+
 		public Downloader(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
 			this.input = input;
 			this.output = output;
@@ -135,12 +143,12 @@ public class Program1 {
 			running = false;
 		}
 	}
-	
+
 	static class Analyzer implements Worker {
 		private BlockingQueue<WebPage> input;
 		private BlockingQueue<WebPage> output;
 		private volatile boolean running;
-	
+
 		public Analyzer(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
 			this.input = input;
 			this.output = output;
@@ -152,7 +160,7 @@ public class Program1 {
 			while (running) {
 				try {
 					WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
-					if (page == null) 
+					if (page == null)
 						continue;
 					page.analyze();
 					output.offer(page);
@@ -168,12 +176,12 @@ public class Program1 {
 			running = false;
 		}
 	}
-	
+
 	static class Categorizer implements Worker {
 		private BlockingQueue<WebPage> input;
 		private BlockingQueue<WebPage> output;
 		private volatile boolean running;
-	
+
 		public Categorizer(BlockingQueue<WebPage> input, BlockingQueue<WebPage> output) {
 			this.input = input;
 			this.output = output;
@@ -190,7 +198,7 @@ public class Program1 {
 				}
 				try {
 					WebPage page = input.poll(50, TimeUnit.MILLISECONDS);
-					if (page == null) 
+					if (page == null)
 						continue;
 					page.categorize();
 					output.offer(page);
