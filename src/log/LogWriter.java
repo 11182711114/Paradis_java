@@ -11,6 +11,7 @@ public class LogWriter implements Runnable {
 
 	private static File logFileStatic;
 	private static boolean append = true;
+	private static boolean write = true;
 
 	private static class LogWriterHolder {
 		private static final LogWriter INSTANCE = new LogWriter(logFileStatic, append);
@@ -28,6 +29,10 @@ public class LogWriter implements Runnable {
 
 	public static void setAppend(boolean app) {
 		append = app;
+	}
+	
+	public static void setWrite(boolean write) {
+		LogWriter.write = write;
 	}
 
 	private File logFile;
@@ -47,7 +52,7 @@ public class LogWriter implements Runnable {
 				logFile.delete();
 			}
 		}
-		while (active) {
+		while (active && write) {
 			try {
 				LogLineStorage lls = writeBuffer.poll(100, TimeUnit.MILLISECONDS);
 				if (lls != null) {
@@ -57,6 +62,13 @@ public class LogWriter implements Runnable {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		while (active && !write) {
+			try {
+				writeBuffer.poll(100, TimeUnit.MILLISECONDS);
+			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}

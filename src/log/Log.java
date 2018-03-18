@@ -14,9 +14,10 @@ public class Log {
 		lw = LogWriter.getInstance();
 	}
 	
-	public static void startLog(File logFile, boolean append) {
+	public static void startLog(File logFile, boolean append, boolean write) {
 		LogWriter.setLogFile(logFile);
 		LogWriter.setAppend(append);
+		LogWriter.setWrite(write);
 		LogWriter lw = LogWriter.getInstance();
 		if (lw != null)
 			new Thread(lw).start();

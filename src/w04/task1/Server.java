@@ -1,3 +1,4 @@
+// Fredrik Larsson frla9839
 package w04.task1;
 
 import java.io.File;
@@ -11,6 +12,7 @@ import java.util.List;
 import log.Log;
 import util.Throttler;
 
+ // Note: this is taken from another course and thus it has some things that do not apply to this assignment, e.g. logger
 public class Server {
 	private static final int DEFAULT_INTERVAL = 1000 / 10;
 	
@@ -29,6 +31,7 @@ public class Server {
 	
 	private File logFile = new File(DEFAULT_LOG_FILE);
 	private boolean logAppend = DEFAULT_LOG_APPEND;
+	private boolean logWrite = false; // change this to true if you want the logger to actually write
 	private Log log;
 	
 	private boolean running;
@@ -50,7 +53,7 @@ public class Server {
 		} catch (IOException e) {
 			log.exception(e);
 		}
-		Log.startLog(logFile, logAppend);
+		Log.startLog(logFile, logAppend, logWrite); 
 		log = Log.getLogger(this.getClass().getSimpleName());
 	}
 	
@@ -88,9 +91,7 @@ public class Server {
 				
 				log.debug("Listening on: " + listeningSocket.getInetAddress() + ":" + listeningSocket.getLocalPort());
 				newSocket = listeningSocket.accept();
-			} catch (IOException e) {
-				log.exception(e);
-			} catch (InterruptedException e) {
+			} catch (IOException | InterruptedException e) {
 				log.exception(e);
 			}
 			if (newSocket != null) {

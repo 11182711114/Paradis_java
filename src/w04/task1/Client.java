@@ -60,7 +60,7 @@ public class Client {
 	}
 	
 	public boolean initialize() {
-		Log.startLog(logFile, logAppend);
+		Log.startLog(logFile, logAppend, false);
 		log = Log.getLogger(this.getClass().getSimpleName());
 		
 		socket = connect(serverHost, serverPort, host, port);
