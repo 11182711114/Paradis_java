@@ -1,5 +1,5 @@
 // Fredrik Larsson frla9839
-package w04.task2;
+package paradis.assignment4;
 
 import java.util.ArrayList;
 import java.util.Arrays;

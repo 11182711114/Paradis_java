@@ -45,4 +45,4 @@ public class LogLineStorage implements Comparable<LogLineStorage> {
 				return 1;
 			return -1;
 		}
-	}
+}
