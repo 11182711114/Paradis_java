@@ -68,12 +68,8 @@ public class CopyOnWriteArrayList<E> implements Collection<E> {
 	
 	private AtomicReference<E[]> array;
 	
-	public CopyOnWriteArrayList(int initialCapacity) {
-		array = new AtomicReference<>((E[]) new Object[initialCapacity]);
-	}
-	
 	public CopyOnWriteArrayList() {
-		this(0);
+		array = new AtomicReference<>((E[]) new Object[0]);
 	}
 	
 	@Override
