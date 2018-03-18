@@ -1,113 +1,224 @@
+// Fredrik Larsson frla9839
 package w04.task2;
 
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
-public class CopyOnWriteArrayList<T> {	
-	AtomicReference<T>[] arr;
-	
-	private int size = 0;
-	
-	public CopyOnWriteArrayList() {
-		arr = (AtomicReference<T>[]) new AtomicReference[10];
-	}
-	
-	private void expandArray() {
-		System.out.println("Expanding array");
-		AtomicReference<T>[] newArr = new AtomicReference[size*2];
-		for (int i = 0; i < arr.length; i++) {
-			newArr[i] = arr[i];
-		}
-		arr = newArr;
-	}
-	
-	boolean add(T t) {
-		if (size+1 >= arr.length)
-			expandArray();
-		arr[size] = new AtomicReference<T>(t);
-		size++; 
-		
-		return true;	
-	}
-	
-	boolean remove(Object obj) {
-		AtomicReference<T>[] newArr = new AtomicReference[arr.length];
-		
-		boolean removed = false;
-		int newArrPos = 0;
-		for (int i = 0; i < arr.length; i++) {
-			AtomicReference<T> atomicReference = arr[i];
-			if (atomicReference == null) 
-				continue;
-			if (obj.equals(atomicReference.get())) {
-				removed = true;
-			} else {
-				newArr[newArrPos] = arr[i];
-				newArrPos++;
-			}
-			
-		}		
-		
-		arr = newArr;
-		
-		if (removed)
-			size--;
-		
-		return removed;
-	}
-	
-	void forEach(Consumer<T> action) {
-		AtomicReference<T>[] arrTmpRfs = arr;
-		for (AtomicReference<T> atomicReference : arrTmpRfs) {
-			if (atomicReference == null)
-				continue;
-			action.accept(atomicReference.get());
-		}
-		
-	}
+@SuppressWarnings("unchecked")
+public class CopyOnWriteArrayList<E> implements Collection<E>, Iterable<E>{
 	
 	public static void main(String[] args) {
-		CopyOnWriteArrayList<String> cp = new CopyOnWriteArrayList<String>();
-//		cp.add("Test");
-//		cp.add("Testis");
-//		String s = "Testigare";
-//		cp.add(s);
-//		cp.add("Testigast");
-//		
-//		cp.forEach(System.out::println);
-//		
-//		cp.remove(s);
-//
-//		cp.forEach(System.out::println);
 		
-		final int steps = 10;
-		long timeToDie = (System.currentTimeMillis() + 10000L);
-		for(int i = 0; i <= 100; i = i+steps) {
-			final int test = i;
-			new Thread(new Runnable() {
-				int start = new Integer(test);
-				@Override
-				public void run() {
-					for (int j = start; j < start+steps; j++) {
-						cp.add(""+j);
-					}
-					
-				}
-			}).start();
-		}
-		try {
-			Thread.sleep(10000L);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-//		Comparator<AtomicReference<String>> c = new Comparable<String> {
-			
-//		}
-//		Arrays.sort(cp.arr, c);
-//		cp.forEach(System.out::println);
+		CopyOnWriteArrayList<Integer> arr = new CopyOnWriteArrayList<>();
+		java.util.concurrent.CopyOnWriteArrayList<Integer> ref = new java.util.concurrent.CopyOnWriteArrayList<>();
+		
+		long start1 = System.nanoTime();
+		IntStream.range(0, 2000).parallel().forEach(arr::add);
+		long end1 = System.nanoTime();
+		IntStream.range(0, 2000).parallel().forEach(ref::add);
+		long end2 = System.nanoTime();
+
+		System.out.println("Arr time [ms]: " + ((end1 - start1) /1E6));
+		System.out.println("Ref time [ms]: " + ((end2 - end1) /1E6));
+		System.out.println();
+		
+		System.out.println("Before removed");
+		System.out.println("Arr sum: " + arr.stream().mapToInt(i -> i).sum());
+		System.out.println("Ref sum: " + ref.stream().mapToInt(i -> i).sum());
+		System.out.println();
+		
+//		IntStream.range(0, 1001).parallel().forEach(i -> {
+//			Integer remove = ThreadLocalRandom.current().nextInt(0, 1001);
+//			boolean arrRemoved = arr.remove(remove);
+//			boolean refRemoved = ref.remove(remove);
+//			if (arrRemoved != refRemoved) {
+//				int index = arr.indexOf(remove);
+//				System.out.println("Mismatch(" + System.nanoTime() + "): " + remove + " ArrRemoved: " + arrRemoved + " Ref: " + refRemoved + "\n\tArr contains? " + arr.contains(remove) + ", index: " + index);
+//			}
+//		});
+		
+		ForkJoinPool.commonPool().awaitQuiescence(500, TimeUnit.SECONDS);
+		
+//		ref.sort((i, j) -> {
+//			return i.compareTo(j);			
+//		});
+//		arr.sort();
+		
+		IntStream.range(0, 1001).parallel().forEach(i -> {
+			boolean arrRemoved = arr.remove(i);
+			boolean refRemoved = ref.remove((Object) i);
+			if (arrRemoved != refRemoved) {
+				int index = arr.indexOf(i);
+				System.out.println("Mismatch(" + System.nanoTime() + "): " + i + " ArrRemoved: " + arrRemoved + " Ref: " + refRemoved + "\n\tArr contains? " + arr.contains(i) + ", index: " + index);
+			}
+		});
+
+		System.out.println();
+		System.out.println("After removed");
+		System.out.println("Arr sum: " + arr.stream().mapToInt(i -> i).sum());
+		System.out.println("Ref sum: " + ref.stream().mapToInt(i -> i).sum());
 	}
 	
+	
+	private AtomicReference<E[]> array;
+	
+	public CopyOnWriteArrayList(int initialCapacity) {
+		array = new AtomicReference<>((E[]) new Object[initialCapacity]);
+	}
+	
+	public CopyOnWriteArrayList() {
+		this(0);
+	}
+	
+	@Override
+	public boolean add(E e) {
+		E[] tmpOrigArray;
+		E[] tmp;
+		do {
+			tmpOrigArray = array.get();
+			tmp = (E[]) new Object[tmpOrigArray.length+1];
+			
+			System.arraycopy(tmpOrigArray, 0, tmp, 0, tmpOrigArray.length);
+			tmp[tmp.length-1] = e;
+		
+		} while (!array.compareAndSet(tmpOrigArray, tmp));
+			
+		return true;
+	}
+
+	@Override
+	public boolean remove(Object o) {
+		boolean changed;
+		E[] tmpOrigArray;
+		E[] tmpNewArray;
+		
+		do {
+			changed = false;
+			tmpOrigArray = array.get();
+			if (tmpOrigArray.length == 0)
+				return false;
+			
+			tmpNewArray = (E[]) new Object[tmpOrigArray.length-1];
+
+			
+			int origArrayPos = 0;
+			int newArrayPos = 0;
+			while (origArrayPos < tmpOrigArray.length && newArrayPos < tmpNewArray.length) {
+				if (!tmpOrigArray[origArrayPos].equals(o)) {
+					tmpNewArray[newArrayPos] = tmpOrigArray[origArrayPos];
+					newArrayPos++;
+				} else {
+					changed = true;
+				}
+				origArrayPos++;
+			}
+			
+			if (!changed)
+				tmpNewArray = tmpOrigArray;
+			
+		} while (!array.compareAndSet(tmpOrigArray, tmpNewArray));
+		
+		return changed;
+	}
+	
+	@Override
+	public void forEach(Consumer<? super E> action) {
+		E[] arr = array.get();
+		for(E e : arr) {
+			action.accept(e);
+		}
+	}
+
+	public void sort() {
+		E[] orig;
+		E[] tmp;
+		do {
+			orig = array.get();
+			tmp = (E[]) new Object[orig.length];
+			System.arraycopy(orig, 0, tmp, 0, orig.length);
+			
+			Arrays.sort(tmp);
+		} while(!array.compareAndSet(orig, tmp));
+	}
+	
+	@Override
+	public int size() {
+		return array.get().length;
+	}
+
+	@Override
+	public Object[] toArray() {
+		return array.get();
+	}
+
+	@Override
+	public <T> T[] toArray(T[] a) {
+		E[] tmp = array.get();
+		if (a.length >= tmp.length) {
+			IntStream.range(0,tmp.length).forEach(i -> {
+				a[i] = (T) tmp[i]; 
+			});
+		}
+		return a;
+	}
+
+	@Override
+	public void clear() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean removeAll(Collection<?> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean retainAll(Collection<?> c) {
+		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public boolean addAll(Collection<? extends E> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	public int indexOf(Object o) {
+		E[] tmp = array.get();
+		int i;
+		for (i = 0; i < tmp.length; i++) {
+			if (tmp[i].equals(o))
+				break;
+		}
+		return i;
+	}
+	
+	@Override
+	public boolean contains(Object o) {
+		E[] tmp = array.get();
+		
+		return Arrays.stream(tmp).anyMatch(elem -> elem.equals(o));
+	}
+
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public boolean isEmpty() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Iterator<E> iterator() {
+		E[] tmp = array.get();
+		return Arrays.stream(tmp).iterator();
+	}
 }
